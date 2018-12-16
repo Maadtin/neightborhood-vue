@@ -2,7 +2,7 @@
 	<aside class="sidebar-view">
 
 		<form @submit.prevent="placeSearchSubmit">
-			<v-text-field v-model="placeSearch" label="Busca lugares..."></v-text-field>
+			<v-text-field :autofocus="true" v-model="placeSearch" label="Busca lugares..."></v-text-field>
 		</form>
 
 
@@ -20,7 +20,7 @@
 						</v-list-tile-title>
 					</v-list-tile-content>
 					<v-list-tile-action>
-						<v-btn icon ripple>
+						<v-btn icon ripple @click="onPlaceClick(item)">
 							<v-icon color="grey lighten-1">info</v-icon>
 						</v-btn>
 					</v-list-tile-action>
@@ -39,9 +39,13 @@
 <script>
 
 	import Loader from "./Loader";
+	import { focus } from '../directives'
 	export default {
 		name: "SideBar",
 		components: {Loader},
+		directives: {
+			focus
+		},
 		props: {
 			venues: {
 				type: Array,
@@ -63,11 +67,8 @@
 			placeSearch: null,
 		}),
 		methods: {
-			inputSearch () {
-				console.log(this.placeSearch)
-			},
-			onPlaceChange (place) {
-				this.$emit('placeChanged', place.geometry ? place.geometry.location : null)
+			onPlaceClick (venue) {
+				this.$emit('zoomToPlace', venue);
 			},
 			placeSearchSubmit () {
 				this.$emit('placeSearchSubmit', this.placeSearch)

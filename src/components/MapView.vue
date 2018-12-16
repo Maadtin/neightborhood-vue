@@ -8,7 +8,7 @@
                 style="width: 100%; height: 100%">
             <template v-if="markers.length">
                 <GmapMarker
-                        v-for="(marker, index) in markers"
+                        v-for="marker in markers"
                         :position="marker.location"
                         @click="onMarkerClick(marker)"
                 >
@@ -16,7 +16,14 @@
                             @closeclick="onInfoWindowClose(marker)"
                             v-if="marker.showInfoWindow"
                     >
-                        {{ marker.item.venue.name }}
+                        <div class="venue-info">
+                            <p class="venue-likes">
+                                A  {{ marker.item.likes.count }} personas les gusta este lugar.
+                            </p>
+                            <h3 class="venue-name">
+                                {{ marker.item.venue.name }}
+                            </h3>
+                        </div>
                     </GmapInfoWindow>
                 </GmapMarker>
             </template>
@@ -33,10 +40,6 @@
             mapConfig: {
                 type: Object,
                 required: true
-            },
-            marker: {
-                type: Object,
-                required: false
             },
             markers: {
                 type: Array,
@@ -64,8 +67,23 @@
 </script>
 
 <style scoped>
+
     .map-view {
         flex: 1;
+    }
+
+    .venue {}
+
+
+    .venue-info {
+
+    }
+    .venue-info p {
+        margin: 0;
+    }
+    .venue-likes {}
+    .venue-name {
+        margin: 5px 0 0;
     }
 
 </style>

@@ -1,8 +1,18 @@
 <template>
     <v-app>
         <div id="app">
-            <SideBar :showNoResults="showNoResults" :loading="loading" :venues="venues" @placeSearchSubmit="placeSearchSubmit"></SideBar>
-            <MapView :markers="markers" :marker="marker" :mapConfig="mapConfig" @clearMarkers="clearMarkers"></MapView>
+            <SideBar
+                    :showNoResults="showNoResults"
+                    :loading="loading"
+                    :venues="venues"
+                    @placeSearchSubmit="placeSearchSubmit"
+                    @zoomToPlace="zoomToPlace"></SideBar>
+            <MapView
+                    :markers="markers"
+                    :mapConfig="mapConfig"
+                    @clearMarkers="clearMarkers"
+            >
+            </MapView>
         </div>
     </v-app>
 </template>
@@ -32,7 +42,6 @@
                 zoom: 7,
                 mapTypeId: 'terrain'
             },
-            marker: null,
             markers: [],
             clientId: 'NAI0IQBPCFZYF5EFJNSXQANRAKGTGWL4TXLTMTTFQVS1FBTT',
             clientSecret: 'Q50E5EKEEGFASDGE4RTM4D2DVCX5IVXYCZRXTYJTH4G5N23Q',
@@ -42,27 +51,44 @@
             showNoResults: ''
         }),
         methods: {
+            zoomToPlace (place) {
+                const { lat, lng } = place.venue.location;
+                this.mapConfig.coords.lat = lat;
+                this.mapConfig.coords.lng = lng;
+                this.mapConfig.zoom = 18;
+            },
             clearMarkers () {
-                this.markers = this.markers.map(marker => {
-                    marker.showInfoWindow = false;
-                    return marker;
+                this.markers = this.markers.map(m => {
+                    m.showInfoWindow = false;
+                    return m;
                 });
             },
             placeSearchSubmit(val) {
                 this.loading = true;
-                let geocoder = new this.google.maps.Geocoder();
+                let geocoder = new this.google.maps.Geocoder(),
+                    queryParams = `client_id=${this.clientId}&client_secret=${this.clientSecret}&v=${this.version}`;
+
                 geocoder.geocode({address: val}, (results, status) => {
                     if (results.length) {
                         let ll = results[0].geometry.location.lat().toString() + ',' + results[0].geometry.location.lng().toString();
-                        axios.get(`https://api.foursquare.com/v2/venues/explore?client_id=${this.clientId}&client_secret=${this.clientSecret}&v=${this.version}&ll=${ll}`)
+                        axios.get(`https://api.foursquare.com/v2/venues/explore?${queryParams}&ll=${ll}`)
                             .then(payload => {
+
                                 this.mapConfig.coords = results[0].geometry.location;
-                                this.mapConfig.zoom = 14;
-                                this.marker = {
-                                    location: results[0].geometry.location
-                                };
+                                this.mapConfig.zoom = 16;
                                 this.loading = false;
-                                this.venues = payload.data.response.groups[0].items;
+
+                                let venuesResult = payload.data.response.groups[0].items;
+
+                                venuesResult = venuesResult.map (v => {
+                                    axios.get(`https://api.foursquare.com/v2/venues/${v.venue.id}?${queryParams}`)
+                                        .then(payload => {
+                                            v.details = payload.data.response;
+                                        });
+                                    return v;
+                                });
+
+                                this.venues = venuesResult;
                                 this.markers = this.venues.map(v => {
                                     return {
                                         location: {
@@ -73,11 +99,11 @@
                                         showInfoWindow: false
                                     }
                                 });
+
                             })
                     } else {
                         this.venues = [];
                         this.markers = [];
-                        this.marker = null;
                         this.loading = false;
                         this.showNoResults = 'No se encontraron resultados con tu búsqueda'
                     }
