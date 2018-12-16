@@ -6,11 +6,20 @@
                 :zoom="mapConfig.zoom"
                 :map-type-id="mapConfig.mapTypeId"
                 style="width: 100%; height: 100%">
-            <GmapMarker v-if="marker" :position="marker.location" @click="onMarkerClick">
-                <GmapInfoWindow @closeclick="onInfoWindowClose" v-if="infoWindow">
-                    {{ infoWindow.text }}
-                </GmapInfoWindow>
-            </GmapMarker>
+            <template v-if="markers.length">
+                <GmapMarker
+                        v-for="(marker, index) in markers"
+                        :position="marker.location"
+                        @click="onMarkerClick(marker)"
+                >
+                    <GmapInfoWindow
+                            @closeclick="onInfoWindowClose(marker)"
+                            v-if="marker.showInfoWindow"
+                    >
+                        {{ marker.item.venue.name }}
+                    </GmapInfoWindow>
+                </GmapMarker>
+            </template>
         </GmapMap>
     </div>
 </template>
@@ -28,19 +37,23 @@
             marker: {
                 type: Object,
                 required: false
+            },
+            markers: {
+                type: Array,
+                required: true,
+                default: () => []
             }
         },
         data: () => ({
             infoWindow: null
         }),
         methods: {
-            onMarkerClick(a) {
-                this.infoWindow = {
-                    text: 'Hola'
-                };
+            onMarkerClick(marker) {
+                this.$emit('clearMarkers');
+                marker.showInfoWindow = true;
             },
-            onInfoWindowClose() {
-                this.infoWindow = null;
+            onInfoWindowClose(marker) {
+                marker.showInfoWindow = false;
             },
         },
         computed: {

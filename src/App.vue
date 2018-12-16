@@ -2,7 +2,7 @@
     <v-app>
         <div id="app">
             <SideBar :showNoResults="showNoResults" :loading="loading" :venues="venues" @placeSearchSubmit="placeSearchSubmit"></SideBar>
-            <MapView :marker="marker" :mapConfig="mapConfig"></MapView>
+            <MapView :markers="markers" :marker="marker" :mapConfig="mapConfig" @clearMarkers="clearMarkers"></MapView>
         </div>
     </v-app>
 </template>
@@ -42,14 +42,11 @@
             showNoResults: ''
         }),
         methods: {
-            setCenter(location) {
-                if (location) {
-                    this.mapConfig.coords = location;
-                    this.mapConfig.zoom = 15;
-                    this.marker = {
-                        location: location
-                    };
-                }
+            clearMarkers () {
+                this.markers = this.markers.map(marker => {
+                    marker.showInfoWindow = false;
+                    return marker;
+                });
             },
             placeSearchSubmit(val) {
                 this.loading = true;
@@ -60,19 +57,29 @@
                         axios.get(`https://api.foursquare.com/v2/venues/explore?client_id=${this.clientId}&client_secret=${this.clientSecret}&v=${this.version}&ll=${ll}`)
                             .then(payload => {
                                 this.mapConfig.coords = results[0].geometry.location;
-                                this.mapConfig.zoom = 15;
+                                this.mapConfig.zoom = 14;
                                 this.marker = {
                                     location: results[0].geometry.location
                                 };
                                 this.loading = false;
                                 this.venues = payload.data.response.groups[0].items;
-                                this.markers.push(this.venues.map(v => ({lat: v.venue.location.lat, lng: v.venue.location.lng})))
+                                this.markers = this.venues.map(v => {
+                                    return {
+                                        location: {
+                                            lat: v.venue.location.lat,
+                                            lng: v.venue.location.lng
+                                        },
+                                        item: v,
+                                        showInfoWindow: false
+                                    }
+                                });
                             })
                     } else {
                         this.venues = [];
+                        this.markers = [];
                         this.marker = null;
                         this.loading = false;
-                        this.showNoResults = 'No se encontrarón resultados con tu búsqueda'
+                        this.showNoResults = 'No se encontraron resultados con tu búsqueda'
                     }
                 })
             },
@@ -98,6 +105,12 @@
     #app {
         display: flex;
         min-height: 100vh;
+    }
+
+
+    .lista-venues {
+        height: 500px;
+        overflow: auto;
     }
 
     .lista-venue-item > div {

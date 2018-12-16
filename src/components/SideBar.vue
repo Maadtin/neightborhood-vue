@@ -79,7 +79,7 @@
 <style scoped>
 
 	.sidebar-view {
-		width: 15%;
+		width: 300px;
 		padding: 1em;
 	}
 
