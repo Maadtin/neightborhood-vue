@@ -1,20 +1,19 @@
 <template>
-    <v-app>
         <div id="app">
             <SideBar
                     :showNoResults="showNoResults"
                     :loading="loading"
                     :venues="venues"
-                    @placeSearchSubmit="placeSearchSubmit"
+                    @placeSearchSubmit="test"
                     @zoomToPlace="zoomToPlace"></SideBar>
             <MapView
+                    ref="mapViewRef"
                     :markers="markers"
                     :mapConfig="mapConfig"
                     @clearMarkers="clearMarkers"
             >
             </MapView>
         </div>
-    </v-app>
 </template>
 
 <script>
@@ -62,6 +61,10 @@
                     m.showInfoWindow = false;
                     return m;
                 });
+            },
+            test (val) {
+                let service = new this.google.maps.places.PlacesService(this.$refs.mapViewRef.$refs.mapRef);
+                service.
             },
             placeSearchSubmit(val) {
                 this.loading = true;
