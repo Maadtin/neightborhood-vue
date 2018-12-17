@@ -9,7 +9,7 @@
             <template v-if="markers.length">
                 <GmapMarker
                         v-for="marker in markers"
-                        :position="marker.location"
+                        :position="marker.item.geometry.location"
                         @click="onMarkerClick(marker)"
                 >
                     <GmapInfoWindow
@@ -17,12 +17,26 @@
                             v-if="marker.showInfoWindow"
                     >
                         <div class="venue-info">
-                            <p class="venue-likes">
-                                A  {{ marker.item.likes.count }} personas les gusta este lugar.
-                            </p>
-                            <h3 class="venue-name">
-                                {{ marker.item.venue.name }}
-                            </h3>
+
+                            <v-card>
+                                <template v-if="marker.item.photos && marker.item.photos.length">
+                                    <v-img :src="marker.item.photos[0].getUrl()" aspect-ratio="2.75" ></v-img>
+                                </template>
+
+                                <v-card-title primary-title>
+                                    <div>
+                                        <h3 class="headline mb-0">{{ marker.item.name }}</h3>
+                                        <span class="marker-rating-text caption mr-2"> ({{ marker.item.rating }}) </span>
+                                        <v-rating v-model="marker.item.rating" readonly half-increments></v-rating>
+                                        <!--<div>Located two hours south of Sydney in the <br>Southern Highlands of New South Wales, ...</div>-->
+                                    </div>
+                                </v-card-title>
+
+                                <!--<v-card-actions>-->
+                                    <!--<v-btn flat color="orange">Share</v-btn>-->
+                                    <!--<v-btn flat color="orange">Explore</v-btn>-->
+                                <!--</v-card-actions>-->
+                            </v-card>
                         </div>
                     </GmapInfoWindow>
                 </GmapMarker>
@@ -67,6 +81,11 @@
 </script>
 
 <style scoped>
+
+    .marker-rating-text {
+        margin-top: 5px !important;
+        display: block;
+    }
 
     .map-view {
         flex: 1;

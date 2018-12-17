@@ -1,8 +1,10 @@
 <template>
 	<aside class="sidebar-view">
 
-		<form @submit.prevent="placeSearchSubmit">
-			<v-text-field :autofocus="true" v-model="placeSearch" label="Busca lugares..."></v-text-field>
+		<form class="search-form" @submit.prevent="placeSearchSubmit">
+			<v-text-field :autofocus="true" v-model="whatSearch" label="¿Qué buscas?"></v-text-field>
+			<v-text-field v-if="whatSearch" v-model="placeSearch" label="¿En dónde?"></v-text-field>
+			<v-btn v-if="placeSearch" color="info" type="submit">Buscar</v-btn>
 		</form>
 
 
@@ -10,17 +12,20 @@
 
 		<v-list class="lista-venues" v-else>
 			<template v-if="venues.length">
-				<v-list-tile v-for="item in venues" class="lista-venue-item">
+				<v-list-tile v-for="venue in venues" class="lista-venue-item" avatar>
+					<v-list-tile-avatar v-if="venue.photos && venue.photos.length">
+						<img :src="venue.photos[0].getUrl()">
+					</v-list-tile-avatar>
 					<v-list-tile-content>
-						<v-list-tile-sub-title>
-							{{ item.venue.categories[0].name }}
-						</v-list-tile-sub-title>
+						<!--<v-list-tile-sub-title>-->
+							<!--{{ item.venue.categories[0].name }}-->
+						<!--</v-list-tile-sub-title>-->
 						<v-list-tile-title>
-							{{ item.venue.name }}
+							{{ venue.name }}
 						</v-list-tile-title>
 					</v-list-tile-content>
 					<v-list-tile-action>
-						<v-btn icon ripple @click="onPlaceClick(item)">
+						<v-btn icon ripple @click="onPlaceClick(venue)">
 							<v-icon color="grey lighten-1">info</v-icon>
 						</v-btn>
 					</v-list-tile-action>
@@ -64,20 +69,29 @@
 			}
 		},
 		data: () => ({
-			placeSearch: null,
+			whatSearch: null,
+			placeSearch: null
 		}),
 		methods: {
 			onPlaceClick (venue) {
 				this.$emit('zoomToPlace', venue);
 			},
 			placeSearchSubmit () {
-				this.$emit('placeSearchSubmit', this.placeSearch)
+				this.$emit('placeSearchSubmit', {
+					whatSearch: this.whatSearch,
+					placeSearch: this.placeSearch
+				})
 			}
 		}
 	}
 </script>
 
 <style scoped>
+
+
+	.search-form {
+		margin-bottom: 20px;
+	}
 
 	.sidebar-view {
 		width: 300px;

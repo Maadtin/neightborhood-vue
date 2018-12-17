@@ -1,19 +1,21 @@
 <template>
-        <div id="app">
-            <SideBar
-                    :showNoResults="showNoResults"
-                    :loading="loading"
-                    :venues="venues"
-                    @placeSearchSubmit="test"
-                    @zoomToPlace="zoomToPlace"></SideBar>
-            <MapView
-                    ref="mapViewRef"
-                    :markers="markers"
-                    :mapConfig="mapConfig"
-                    @clearMarkers="clearMarkers"
-            >
-            </MapView>
-        </div>
+        <v-app>
+            <div id="app">
+                <SideBar
+                        :showNoResults="showNoResults"
+                        :loading="loading"
+                        :venues="venues"
+                        @placeSearchSubmit="placeSearchSubmit"
+                        @zoomToPlace="zoomToPlace"></SideBar>
+                <MapView
+                        ref="mapViewRef"
+                        :markers="markers"
+                        :mapConfig="mapConfig"
+                        @clearMarkers="clearMarkers"
+                >
+                </MapView>
+            </div>
+        </v-app>
 </template>
 
 <script>
@@ -51,9 +53,8 @@
         }),
         methods: {
             zoomToPlace (place) {
-                const { lat, lng } = place.venue.location;
-                this.mapConfig.coords.lat = lat;
-                this.mapConfig.coords.lng = lng;
+                console.log(place);
+                this.mapConfig.coords = place.geometry.location;
                 this.mapConfig.zoom = 18;
             },
             clearMarkers () {
@@ -62,56 +63,51 @@
                     return m;
                 });
             },
-            test (val) {
-                let service = new this.google.maps.places.PlacesService(this.$refs.mapViewRef.$refs.mapRef);
-                service.
-            },
-            placeSearchSubmit(val) {
-                this.loading = true;
+            placeSearchSubmit ({ whatSearch, placeSearch }) {
+
                 let geocoder = new this.google.maps.Geocoder(),
                     queryParams = `client_id=${this.clientId}&client_secret=${this.clientSecret}&v=${this.version}`;
 
-                geocoder.geocode({address: val}, (results, status) => {
-                    if (results.length) {
-                        let ll = results[0].geometry.location.lat().toString() + ',' + results[0].geometry.location.lng().toString();
-                        axios.get(`https://api.foursquare.com/v2/venues/explore?${queryParams}&ll=${ll}`)
-                            .then(payload => {
+                this.loading = true;
+                geocoder.geocode({address: placeSearch}, (geoResults, status) => {
+                    if (geoResults.length) {
+                        let request = {
+                            location: geoResults[0].geometry.location,
+                            query: whatSearch,
+                            radius: '500'
+                        };
+                        this.$refs.mapViewRef.$refs.mapRef.$mapPromise.then(map => {
+                            let service = new this.google.maps.places.PlacesService(map);
+                            service.textSearch(request, (results, status) => {
+                               if (results.length) {
+                                   this.venues = results;
+                                   this.markers = this.venues.map(v => {
+                                       return {
+                                           item: v,
+                                           showInfoWindow: false
+                                       }
+                                   });
+                                   this.mapConfig.coords = geoResults[0].geometry.location;
+                                   this.mapConfig.zoom = 16;
+                                   this.loading = false;
+                               } else {
+                                   this.venues = [];
+                                   this.markers = [];
+                                   this.loading = false;
+                                   this.showNoResults = 'No se encontraron resultados con tu búsqueda'
+                               }
+                            });
+                        });
 
-                                this.mapConfig.coords = results[0].geometry.location;
-                                this.mapConfig.zoom = 16;
-                                this.loading = false;
-
-                                let venuesResult = payload.data.response.groups[0].items;
-
-                                venuesResult = venuesResult.map (v => {
-                                    axios.get(`https://api.foursquare.com/v2/venues/${v.venue.id}?${queryParams}`)
-                                        .then(payload => {
-                                            v.details = payload.data.response;
-                                        });
-                                    return v;
-                                });
-
-                                this.venues = venuesResult;
-                                this.markers = this.venues.map(v => {
-                                    return {
-                                        location: {
-                                            lat: v.venue.location.lat,
-                                            lng: v.venue.location.lng
-                                        },
-                                        item: v,
-                                        showInfoWindow: false
-                                    }
-                                });
-
-                            })
                     } else {
                         this.venues = [];
                         this.markers = [];
                         this.loading = false;
                         this.showNoResults = 'No se encontraron resultados con tu búsqueda'
                     }
-                })
-            },
+                });
+
+            }
         },
         computed: {
             google: gmapApi
@@ -137,6 +133,10 @@
     }
 
 
+    .v-btn {
+        margin: 0 !important;
+    }
+
     .lista-venues {
         height: 500px;
         overflow: auto;
@@ -144,6 +144,14 @@
 
     .lista-venue-item > div {
         padding-left: 0;
+    }
+
+    .v-card__title{
+        padding-left: 0 !important;;
+    }
+
+    .v-icon:first-child {
+        padding-left: 0 !important;
     }
 
     .lista-venue-item:not(:last-child) {
